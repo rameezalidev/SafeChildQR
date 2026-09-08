@@ -1,0 +1,99 @@
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import FormFooter from '../../components/FormFooter';
+import FormHeader from '../../components/FormHeader';
+import './Login.css';
+
+function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    if (localStorage.getItem('currentUser')) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
+
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
+
+  function getUsers() {
+    const savedUsers = localStorage.getItem('users');
+    try {
+      return savedUsers ? JSON.parse(savedUsers) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    const users = getUsers();
+    const found = users.find(
+      (user: { email?: string }) =>
+        user.email?.toLowerCase() === email.trim().toLowerCase()
+    );
+
+    if (found && found.password === password) {
+      localStorage.setItem('currentUser', JSON.stringify(found));
+      toast.success('Successfully logged in!', { id: 'valid-login' });
+      navigate('/dashboard');
+      return;
+    }
+
+    toast.error('Invalid credentials!', { id: 'invalid-login' });
+  }
+
+  return (
+    <div className="auth-page">
+      <div className="auth-shell">
+
+        <div className="auth-card">
+          <FormHeader
+            title="SafeChild"
+            text="QR"
+            heading="Welcome Back"
+            detail="Login to manage your children's safety"
+          />
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="input-field">
+              <span className="input-icon">✉</span>
+              <input
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                ref={emailRef}
+              />
+            </div>
+
+            <div className="input-field">
+              <span className="input-icon">🔒</span>
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <button type="submit" className="primary-btn">Login</button>
+          </form>
+
+          <div className="auth-footer">
+            <FormFooter text="Don't have an account?" goto="signup" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Login
