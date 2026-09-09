@@ -267,6 +267,10 @@
   .dashboard-content {
     grid-template-columns: 1fr;
   }
+  
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
 
   .dashboard-header {
     flex-direction: column;

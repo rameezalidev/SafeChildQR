@@ -2,6 +2,7 @@ import { useFormik } from 'formik';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
+import { toast } from 'react-hot-toast';
 
 type Child = {
   name: string;
@@ -55,7 +56,7 @@ function Dashboard() {
     localStorage.setItem('users', JSON.stringify(updatedUsers));
 
     const updatedUser = { ...currentUser, children: nextChildren };
-    localStorage.setItem('currentUser', JSON.stringify(localStorage.setItem('currentUser', JSON.stringify(updatedUser))));
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     setCurrentUser(updatedUser);
     setUserData(nextChildren);
   }
@@ -102,6 +103,13 @@ function Dashboard() {
     },
 
     onSubmit: (values) => {
+      if (editIndex !== null && !formik.dirty) {
+        setEditIndex(null);
+        formik.resetForm();
+        return;
+      }
+
+
       const childData: Child = {
         name: values.name.trim(),
         age: values.age,
@@ -109,6 +117,20 @@ function Dashboard() {
         info: values.info.trim(),
       };
 
+      if (editIndex === null) {
+        const isDuplicate = userData.some(
+          (child) =>
+            child.name.toLowerCase() === childData.name.toLowerCase() 
+        );
+
+        if (isDuplicate) {
+          toast.error('This child already exists');
+          return;
+        }
+
+        syncChildren([...userData, childData]);
+        toast.success('Child added successfully');
+      }
       if (editIndex !== null) {
         const updatedChildren = userData.map((child, index) =>
           index === editIndex ? childData : child
@@ -126,7 +148,7 @@ function Dashboard() {
   function deleteChild(index: number) {
     const updatedChildren = userData.filter((_, idx) => idx !== index);
     syncChildren(updatedChildren);
-
+    toast.success("User deleted");
     if (editIndex === index) {
       setEditIndex(null);
       formik.resetForm();
@@ -136,11 +158,13 @@ function Dashboard() {
   function editChild(index: number) {
     const child = userData[index];
 
-    formik.setValues({
-      name: child.name,
-      age: child.age,
-      gender: child.gender,
-      info: child.info,
+    formik.resetForm({
+      values: {
+        name: child.name,
+        age: child.age,
+        gender: child.gender,
+        info: child.info,
+      },
     });
 
     setEditIndex(index);
@@ -148,7 +172,14 @@ function Dashboard() {
 
   function cancelEdit() {
     setEditIndex(null);
-    formik.resetForm();
+    formik.resetForm({
+      values: {
+        name: '',
+        age: '',
+        gender: '',
+        info: '',
+      },
+    });
   }
 
   function handleLogout() {
@@ -237,7 +268,7 @@ function Dashboard() {
               )}
 
               <div className="form-actions">
-                <button type="submit" className="primary-btn">
+                <button type="submit" className="primary-btn" disabled={editIndex !== null && !formik.dirty}>
                   {editIndex !== null ? 'Update Child' : 'Add Child'}
                 </button>
 
